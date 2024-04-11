@@ -20,88 +20,73 @@ mongoose.connect(process.env.MONGO_URL, {
 }).then(() => console.log('MongoDB connected'))
   .catch(err => console.error('MongoDB connection error:', err));
 
-const userSchema = new mongoose.Schema({
-  email: { type: String, required: true, unique: true },
-  password: { type: String, required: true }
-});
-
-const User = mongoose.model('User', userSchema);
-
-const JWT_SECRET_KEY = process.env.JWT_SECRET_KEY || 'secret';
-
-const generateToken = (user) => {
-  return jwt.sign({ email: user.email}, JWT_SECRET_KEY, { expiresIn: '1h' });
-};
-
-const verifyToken = (token) => {
-  try {
-    return jwt.verify(token, JWT_SECRET_KEY);
-  } catch (error) {
-    return null;
-  }
-};
-
-// Validation middleware for email and password
-const validateEmailAndPassword = (email, password) => {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$/; // At least one lowercase, one uppercase, one number, and minimum 8 characters
-
-  if (!emailRegex.test(email)) {
-    throw new Error('Invalid email address');
-  }
-
-  if (!passwordRegex.test(password)) {
-    throw new Error('Password must be at least 8 characters long and contain at least one lowercase, one uppercase, and one number');
-  }
-};
-
-app.post('/register', async (req, res) => {
-  const { email, password } = req.body;
-
-  try {
-    validateEmailAndPassword(email, password);
-
-    const existingUser = await User.findOne({ email }).exec();
-    if (existingUser) {
-      return res.status(400).json({ error: 'Email already exists' });
+  const userSchema = new mongoose.Schema({
+    email: { type: String, required: true, unique: true },
+    password: { type: String, required: true }
+  });
+  
+  // Create User model
+  const User = mongoose.model('User', userSchema);
+  
+  // Define JWT secret key
+  const JWT_SECRET_KEY = process.env.JWT_SECRET_KEY || 'secret';
+  
+  // Generate JWT token
+  const generateToken = (user) => {
+    return jwt.sign({ email: user.email }, JWT_SECRET_KEY, { expiresIn: '1h' });
+  };
+  
+  // Register endpoint
+  app.post('/register', async (req, res) => {
+    const { email, password } = req.body;
+  
+    try {
+      // Hash the password
+      const hashedPassword = await bcrypt.hash(password, 10);
+  
+      // Create a new user
+      const newUser = new User({ email, password: hashedPassword });
+      await newUser.save();
+  
+      // Generate JWT token
+      const token = generateToken(newUser);
+  
+      // Respond with the token
+      res.status(201).json({ token });
+    } catch (error) {
+      console.error('Error registering user:', error);
+      res.status(400).json({ error: error.message });
     }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = new User({ email, password: hashedPassword });
-    await newUser.save();
-
-    const token = generateToken(newUser);
-    res.status(201).json({ token });
-  } catch (error) {
-    console.error('Error registering user:', error);
-    res.status(400).json({ error: error.message });
-  }
-});
-
-app.post('/login', async (req, res) => {
-  const { email, password } = req.body;
-
-  try {
-    validateEmailAndPassword(email, password);
-
-    const user = await User.findOne({ email }).exec();
-    if (!user) {
-      return res.status(401).json({ error: 'Invalid credentials' });
+  });
+  
+  // Login endpoint
+  app.post('/login', async (req, res) => {
+    const { email, password } = req.body;
+  
+    try {
+      // Find the user by email
+      const user = await User.findOne({ email }).exec();
+      if (!user) {
+        return res.status(401).json({ error: 'Invalid credentials' });
+      }
+  
+      // Compare passwords
+      const passwordMatch = await bcrypt.compare(password, user.password);
+      if (!passwordMatch) {
+        return res.status(401).json({ error: 'Invalid credentials' });
+      }
+  
+      // Generate JWT token
+      const token = generateToken(user);
+  
+      // Respond with the token
+      res.status(200).json({ token });
+    } catch (error) {
+      console.error('Error authenticating user:', error);
+      res.status(400).json({ error: error.message });
     }
-
-    const passwordMatch = await bcrypt.compare(password, user.password);
-    if (!passwordMatch) {
-      return res.status(401).json({ error: 'Invalid credentials' });
-    }
-
-    const token = generateToken(user);
-    res.status(200).json({ token });
-  } catch (error) {
-    console.error('Error authenticating user:', error);
-    res.status(400).json({ error: error.message });
-  }
-});
-
+  });
+  
 // Rest of your code for sending emails...
 const emailSchema = new mongoose.Schema({
     to: { type: String, required: true },
@@ -152,7 +137,7 @@ app.post('/send-bulk-email', async (req, res) => {
       res.status(500).json({ error: 'Internal Server Error' });
     }
   });
-  
+
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });
