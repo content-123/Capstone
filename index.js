@@ -87,7 +87,31 @@ mongoose.connect(process.env.MONGO_URL, {
     }
   });
   
-// Rest of your code for sending emails...
+// Middleware to check if the user is authenticated
+const authenticateUser = (req, res, next) => {
+    const token = req.headers.authorization;
+  
+    if (!token) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+  
+    try {
+      // Verify JWT token
+      const decoded = jwt.verify(token, JWT_SECRET_KEY);
+      req.user = decoded;
+      next();
+    } catch (error) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+  };
+  
+  // Example usage:
+  app.get('/protected-route', authenticateUser, (req, res) => {
+    // If the request reaches here, it means the user is authenticated
+    res.json({ message: 'Authenticated user' });
+  });
+  
+  
 const emailSchema = new mongoose.Schema({
     to: { type: String, required: true },
     subject: { type: String, required: true },
