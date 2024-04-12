@@ -105,11 +105,7 @@ const authenticateUser = (req, res, next) => {
     }
   };
   
-  // Example usage:
-  app.get('/protected-route', authenticateUser, (req, res) => {
-    // If the request reaches here, it means the user is authenticated
-    res.json({ message: 'Authenticated user' });
-  });
+
   
   
 const emailSchema = new mongoose.Schema({
@@ -119,7 +115,7 @@ const emailSchema = new mongoose.Schema({
   });
 
   const Email = mongoose.model('Email', emailSchema);
-app.post('/send-bulk-email', async (req, res) => {
+app.post('/send-bulk-email',authenticateUser, async (req, res) => {
     try {
       const { to, subject,body } = req.body;
 
