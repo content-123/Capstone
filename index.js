@@ -87,24 +87,7 @@ mongoose.connect(process.env.MONGO_URL, {
     }
   });
   
-// // Middleware to check if the user is authenticated
-// const authenticateUser = (req, res, next) => {
-//     const token = req.headers.authorization;
-  
-//     if (!token) {
-//       return res.status(401).json({ error: 'Unauthorized' });
-//     }
-  
-//     try {
-//       // Verify JWT token
-//       const decoded = jwt.verify(token, JWT_SECRET_KEY);
-//       req.user = decoded;
-//       next();
-//     } catch (error) {
-//       return res.status(401).json({ error: 'Unauthorized' });
-//     }
-//   };
-  
+
 
   
   
