@@ -87,23 +87,23 @@ mongoose.connect(process.env.MONGO_URL, {
     }
   });
   
-// Middleware to check if the user is authenticated
-const authenticateUser = (req, res, next) => {
-    const token = req.headers.authorization;
+// // Middleware to check if the user is authenticated
+// const authenticateUser = (req, res, next) => {
+//     const token = req.headers.authorization;
   
-    if (!token) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
+//     if (!token) {
+//       return res.status(401).json({ error: 'Unauthorized' });
+//     }
   
-    try {
-      // Verify JWT token
-      const decoded = jwt.verify(token, JWT_SECRET_KEY);
-      req.user = decoded;
-      next();
-    } catch (error) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
-  };
+//     try {
+//       // Verify JWT token
+//       const decoded = jwt.verify(token, JWT_SECRET_KEY);
+//       req.user = decoded;
+//       next();
+//     } catch (error) {
+//       return res.status(401).json({ error: 'Unauthorized' });
+//     }
+//   };
   
 
   
@@ -115,7 +115,7 @@ const emailSchema = new mongoose.Schema({
   });
 
   const Email = mongoose.model('Email', emailSchema);
-app.post('/send-bulk-email',authenticateUser, async (req, res) => {
+app.post('/send-bulk-email', async (req, res) => {
     try {
       const { to, subject,body } = req.body;
 
